@@ -97,8 +97,8 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
-  m_LightingSettings: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 620a4a1224fb1cd438b9d3eeb288eb41, type: 2}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: 4a04a560f2f1b6340af7a6cfc42d6a89, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -4735,6 +4735,11 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &1757010581 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7006119547026301303, guid: 067f611ab0f154841b6a30714baad4c1, type: 3}
+  m_PrefabInstance: {fileID: 1472581617}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &1759714816 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8688453119267726275, guid: 067f611ab0f154841b6a30714baad4c1, type: 3}
@@ -5147,6 +5152,7 @@ MonoBehaviour:
   nickNameInput: {fileID: 1372480866}
   nickNamePanel: {fileID: 1228312199}
   hasSetTheNickName: 0
+  startBtn: {fileID: 1757010581}
 --- !u!4 &1912943880
 Transform:
   m_ObjectHideFlags: 0

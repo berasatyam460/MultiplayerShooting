@@ -1,10 +1,10 @@
-using System;
-using System.ComponentModel.Design;
-using Unity.VisualScripting;
+
+using Photon.Pun;
+
 using UnityEngine;
 
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviourPunCallbacks
 {
     [Header("CameraRef")]
     [SerializeField]Transform viewPoint;
@@ -33,6 +33,7 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField]GameObject bulletImapactPrefab;
     private CharacterController charController;
+    [SerializeField]GameObject playerHitImpact;
     void Awake()
     {
         charController=GetComponent<CharacterController>();
@@ -46,6 +47,8 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(photonView.IsMine){
+            
         mouseInput=new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"))*mouseSensitivity;
         transform.rotation=Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + mouseInput.x, transform.rotation.z);
         verticalRotStore+=mouseInput.y;
@@ -84,10 +87,12 @@ public class PlayerController : MonoBehaviour
             
 
         }
+        }
     }
 
     void FixedUpdate()
     {
+        if(photonView.IsMine){
         moveDir=new Vector3(Input.GetAxis("Horizontal"),0f,Input.GetAxis("Vertical"));
         float yVel=movement.y;
         movement=((transform.forward*moveDir.z)+(transform.right*moveDir.x)).normalized*activeMoveSpeed;
@@ -97,19 +102,27 @@ public class PlayerController : MonoBehaviour
         }
         charController.Move(movement*Time.fixedDeltaTime);
         movement.y+=Physics.gravity.y*Time.fixedDeltaTime*gravityMod;
+        }
     }
     void LateUpdate()
     {
-        mainCamera.transform.position=viewPoint.transform.position;
-        mainCamera.transform.rotation=viewPoint.transform.rotation;
+        if(photonView.IsMine){
+            mainCamera.transform.position=viewPoint.transform.position;
+            mainCamera.transform.rotation=viewPoint.transform.rotation;
+        }
+        
     }
     void Shoot(){
         Ray ray=mainCamera.ViewportPointToRay(new Vector3( .5f, .5f, 0f));
         ray.origin=mainCamera.transform.position;
         if(Physics.Raycast(ray,out RaycastHit hitInfo)){
-            Debug.Log("hitting on"+hitInfo.collider.gameObject);
-            GameObject bulletImpactEffect=Instantiate(bulletImapactPrefab,hitInfo.point+(hitInfo.normal*0.002f),Quaternion.LookRotation(hitInfo.normal,Vector3.up));
+            if(hitInfo.collider.gameObject.tag=="Player"){
+                
+            }else{
+                             GameObject bulletImpactEffect=Instantiate(bulletImapactPrefab,hitInfo.point+(hitInfo.normal*0.002f),Quaternion.LookRotation(hitInfo.normal,Vector3.up));
             Destroy(bulletImpactEffect,2f);
+            }
+
         }
         shootCounter=timeBetweenShorts;
     }

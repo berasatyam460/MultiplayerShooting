@@ -36,6 +36,8 @@ public class Launcher : MonoBehaviourPunCallbacks
    [SerializeField]TMP_InputField nickNameInput;
    [SerializeField]GameObject nickNamePanel;
    [SerializeField]bool hasSetTheNickName;
+   [SerializeField]GameObject startBtn;
+
 
    void CloseMenu(){
     loadingScreen.SetActive(false);
@@ -101,6 +103,12 @@ public class Launcher : MonoBehaviourPunCallbacks
         roomPanel.SetActive(true);
         roomNameText.text=PhotonNetwork.CurrentRoom.Name;
         ListAllPlayer();
+        if(PhotonNetwork.IsMasterClient){
+            startBtn.SetActive(true);
+
+        }else{
+            startBtn.SetActive(false);
+        }
     }
     //if the room creation is failed
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -197,6 +205,15 @@ public class Launcher : MonoBehaviourPunCallbacks
             CloseMenu();
             menuButtons.SetActive(true);
             hasSetTheNickName=true;
+        }
+    }
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        if(PhotonNetwork.IsMasterClient){
+            startBtn.SetActive(true);
+
+        }else{
+            startBtn.SetActive(false);
         }
     }
     public void StartGame(String LeveltoGo){
