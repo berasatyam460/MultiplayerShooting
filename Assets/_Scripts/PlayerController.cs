@@ -118,7 +118,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if(Physics.Raycast(ray,out RaycastHit hitInfo)){
             if(hitInfo.collider.gameObject.tag=="Player"){
                 PhotonNetwork.Instantiate(playerHitImpact.name,hitInfo.point,Quaternion.identity);
-                hitInfo.collider.gameObject.GetPhotonView().RPC("DealDamage",RpcTarget.All,photonView.Owner.NickName);
+                hitInfo.collider.gameObject.GetPhotonView().RPC(nameof(DealDamage),RpcTarget.All,photonView.Owner.NickName);
             }else{
                 GameObject bulletImpactEffect=Instantiate(bulletImapactPrefab,hitInfo.point+(hitInfo.normal*0.002f),Quaternion.LookRotation(hitInfo.normal,Vector3.up));
                 Destroy(bulletImpactEffect,2f);
@@ -132,10 +132,10 @@ public class PlayerController : MonoBehaviourPunCallbacks
        TakeDamage(Damager);
     }
     public void TakeDamage(string Damager){
-        if(photonView.IsMine){
+        
             Debug.Log(photonView.Owner.NickName+" have been hit by "+Damager);
-            gameObject.SetActive(false);
-        }
+            PlayerSpwaner.instance.Die();
+        
          
     }
 }

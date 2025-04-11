@@ -8,6 +8,7 @@ public class PlayerSpwaner : MonoBehaviour
 {   
     public static PlayerSpwaner instance;
     [SerializeField]GameObject playerPrefab;
+    [SerializeField]GameObject deathFx;
     private GameObject player;
 
     [SerializeField]List<Transform>spwanPointList=new List<Transform>();
@@ -32,5 +33,10 @@ public class PlayerSpwaner : MonoBehaviour
 
    private Transform GetSpwanPoint(){
       return spwanPointList[Random.Range(0,spwanPointList.Count)];
+   }
+   public void Die(){
+        PhotonNetwork.Instantiate(deathFx.name,player.transform.position,Quaternion.identity);
+        PhotonNetwork.Destroy(player);
+        SpwanPlayer();
    }
 }
