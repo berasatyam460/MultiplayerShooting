@@ -1,0 +1,27 @@
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class UI_Controler : MonoBehaviour
+{
+    public static UI_Controler instance;
+    [Header("Components")]
+    [SerializeField]GameObject deathScreen;
+     [SerializeField]TMP_Text deathText;
+     [SerializeField]Slider healthSlider;
+    void Awake()
+    {
+        instance=this;
+
+    }
+    public void ShowDeathScreen(string damager,bool isActive){
+        deathText.text ="You are killed by "+damager;
+        deathScreen.SetActive(isActive);
+    }
+    public void OnHealthChanged(int currentHealth){
+        healthSlider.value=currentHealth;
+    }
+    
+}

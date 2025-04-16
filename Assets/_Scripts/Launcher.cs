@@ -50,6 +50,7 @@ public class Launcher : MonoBehaviourPunCallbacks
    }
     void Start()
     {
+         Cursor.lockState=CursorLockMode.None;
         CloseMenu();
         loadingScreen.SetActive(true);
         loadingText.text="Connecting To Network...";

@@ -26,6 +26,8 @@ public class PlayerController : MonoBehaviourPunCallbacks
     [Header("GroundCheckVar")]
     [SerializeField]Transform groundCheckPos;
     [SerializeField]LayerMask groundLayer;
+    [Header("Components")]
+    [SerializeField]Animator anim;
     bool isGrounded;
     
     private float timeBetweenShorts=0.1f;
@@ -34,6 +36,9 @@ public class PlayerController : MonoBehaviourPunCallbacks
     [SerializeField]GameObject bulletImapactPrefab;
     private CharacterController charController;
     [SerializeField]GameObject playerHitImpact;
+    [SerializeField]int damageGiven;
+    [SerializeField]int maxHealth=100;
+    [SerializeField]int currentHealth;
     void Awake()
     {
         charController=GetComponent<CharacterController>();
@@ -43,6 +48,8 @@ public class PlayerController : MonoBehaviourPunCallbacks
     void Start()
     {
         Cursor.lockState=CursorLockMode.Locked;
+        currentHealth=maxHealth;
+        UI_Controler.instance.OnHealthChanged(maxHealth);
     }
     // Update is called once per frame
     void Update()
@@ -88,6 +95,9 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
         }
         }
+        anim.SetBool("grounded",isGrounded);
+        anim.SetFloat("speed",moveDir.magnitude);
+       
     }
 
     void FixedUpdate()
@@ -99,6 +109,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         movement.y=yVel;
         if(charController.isGrounded){
             movement.y=0;
+            
         }
         charController.Move(movement*Time.fixedDeltaTime);
         movement.y+=Physics.gravity.y*Time.fixedDeltaTime*gravityMod;
@@ -118,7 +129,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if(Physics.Raycast(ray,out RaycastHit hitInfo)){
             if(hitInfo.collider.gameObject.tag=="Player"){
                 PhotonNetwork.Instantiate(playerHitImpact.name,hitInfo.point,Quaternion.identity);
-                hitInfo.collider.gameObject.GetPhotonView().RPC(nameof(DealDamage),RpcTarget.All,photonView.Owner.NickName);
+                hitInfo.collider.gameObject.GetPhotonView().RPC(nameof(DealDamage),RpcTarget.All,photonView.Owner.NickName,damageGiven);
             }else{
                 GameObject bulletImpactEffect=Instantiate(bulletImapactPrefab,hitInfo.point+(hitInfo.normal*0.002f),Quaternion.LookRotation(hitInfo.normal,Vector3.up));
                 Destroy(bulletImpactEffect,2f);
@@ -128,14 +139,21 @@ public class PlayerController : MonoBehaviourPunCallbacks
         shootCounter=timeBetweenShorts;
     }
     [PunRPC]
-    public void DealDamage(string Damager){
-       TakeDamage(Damager);
+    public void DealDamage(string Damager,int damageGiven){
+        
+            TakeDamage(Damager,damageGiven);
     }
-    public void TakeDamage(string Damager){
-        
+    public void TakeDamage(string Damager,int damageAmount){
+            if(photonView.IsMine){
             Debug.Log(photonView.Owner.NickName+" have been hit by "+Damager);
-            PlayerSpwaner.instance.Die();
-        
+            currentHealth-=damageAmount;
+            if(currentHealth<=0){
+                currentHealth=0;
+                PlayerSpwaner.instance.Die(Damager);
+            }
+            UI_Controler.instance.OnHealthChanged(currentHealth);
+           
+        }
          
     }
 }
