@@ -28,6 +28,10 @@ public class PlayerController : MonoBehaviourPunCallbacks
     [SerializeField]LayerMask groundLayer;
     [Header("Components")]
     [SerializeField]Animator anim;
+    [SerializeField]GameObject playerModel;
+    [SerializeField]Transform modelGunPoint,gunHolder;
+    
+
     bool isGrounded;
     
     private float timeBetweenShorts=0.1f;
@@ -49,7 +53,17 @@ public class PlayerController : MonoBehaviourPunCallbacks
     {
         Cursor.lockState=CursorLockMode.Locked;
         currentHealth=maxHealth;
-        UI_Controler.instance.OnHealthChanged(maxHealth);
+       
+        if(photonView.IsMine){
+            playerModel.SetActive(false);
+            UI_Controler.instance.setMaxValue(maxHealth);
+            UI_Controler.instance.OnHealthChanged(currentHealth);
+        }else{
+            gunHolder.parent=modelGunPoint;
+            gunHolder.localPosition=Vector3.zero;
+            gunHolder.localRotation=Quaternion.identity;
+        }
+            
     }
     // Update is called once per frame
     void Update()
@@ -145,15 +159,14 @@ public class PlayerController : MonoBehaviourPunCallbacks
     }
     public void TakeDamage(string Damager,int damageAmount){
             if(photonView.IsMine){
-            Debug.Log(photonView.Owner.NickName+" have been hit by "+Damager);
-            currentHealth-=damageAmount;
-            if(currentHealth<=0){
+                Debug.Log(photonView.Owner.NickName+" have been hit by "+Damager);
+                currentHealth-=damageAmount;
+                UI_Controler.instance.OnHealthChanged(currentHealth);
+                if(currentHealth<=0){
                 currentHealth=0;
                 PlayerSpwaner.instance.Die(Damager);
+                }
             }
-            UI_Controler.instance.OnHealthChanged(currentHealth);
-           
-        }
          
     }
 }

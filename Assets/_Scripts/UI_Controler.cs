@@ -23,5 +23,8 @@ public class UI_Controler : MonoBehaviour
     public void OnHealthChanged(int currentHealth){
         healthSlider.value=currentHealth;
     }
+    public void setMaxValue(int maxHealth){
+        healthSlider.maxValue=maxHealth;
+    }
     
 }
