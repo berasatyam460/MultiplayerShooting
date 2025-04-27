@@ -353,6 +353,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53a7310d065cf6c4693fb270a6bc96c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  allPlayerInfos: []
+  theEvent: 0
 --- !u!4 &119004300
 Transform:
   m_ObjectHideFlags: 0
