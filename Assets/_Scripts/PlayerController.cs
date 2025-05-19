@@ -143,7 +143,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if(Physics.Raycast(ray,out RaycastHit hitInfo)){
             if(hitInfo.collider.gameObject.tag=="Player"){
                 PhotonNetwork.Instantiate(playerHitImpact.name,hitInfo.point,Quaternion.identity);
-                hitInfo.collider.gameObject.GetPhotonView().RPC(nameof(DealDamage),RpcTarget.All,photonView.Owner.NickName,damageGiven);
+                hitInfo.collider.gameObject.GetPhotonView().RPC(nameof(DealDamage),RpcTarget.All,photonView.Owner.NickName,damageGiven,PhotonNetwork.LocalPlayer.ActorNumber);
             }else{
                 GameObject bulletImpactEffect=Instantiate(bulletImapactPrefab,hitInfo.point+(hitInfo.normal*0.002f),Quaternion.LookRotation(hitInfo.normal,Vector3.up));
                 Destroy(bulletImpactEffect,2f);
@@ -153,11 +153,11 @@ public class PlayerController : MonoBehaviourPunCallbacks
         shootCounter=timeBetweenShorts;
     }
     [PunRPC]
-    public void DealDamage(string Damager,int damageGiven){
+    public void DealDamage(string Damager,int damageGiven,int actor){
         
-            TakeDamage(Damager,damageGiven);
+            TakeDamage(Damager,damageGiven,actor);
     }
-    public void TakeDamage(string Damager,int damageAmount){
+    public void TakeDamage(string Damager,int damageAmount, int actor){
             if(photonView.IsMine){
                 Debug.Log(photonView.Owner.NickName+" have been hit by "+Damager);
                 currentHealth-=damageAmount;
@@ -165,6 +165,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
                 if(currentHealth<=0){
                 currentHealth=0;
                 PlayerSpwaner.instance.Die(Damager);
+                MatchManager.instance.UpdateStatSend(actor,0,1);
                 }
             }
          

@@ -6,32 +6,35 @@ using Photon.Realtime;
 using ExitGames.Client.Photon;
 using System.Collections.Generic;
 
-public class MatchManager : MonoBehaviourPunCallbacks,IOnEventCallback
-{   
+public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
+{
     public static MatchManager instance;
-     void Awake()
+    void Awake()
     {
-        instance=this;
+        instance = this;
     }
 
-    public enum EventCodes:byte{
+    public enum EventCodes : byte
+    {
         NewPlayer,
         ListPlayer,
         UpdateStat
     }
 
-    [SerializeField]List<PlayerInfo>allPlayerInfos=new List<PlayerInfo>();
+    [SerializeField] List<PlayerInfo> allPlayerInfos = new List<PlayerInfo>();
     private int index;
-    [SerializeField]EventCodes theEvent;
-    
+    [SerializeField] EventCodes theEvent;
 
+    private List<LeaderBroadPlayer> lBoardPlayer = new List<LeaderBroadPlayer>();
     public void OnEvent(EventData photonEvent)
     {
-        if(photonEvent.Code<200){
-            EventCodes theEvent=(EventCodes)photonEvent.Code;
-            object[] data =(object[])photonEvent.CustomData;
+        if (photonEvent.Code < 200)
+        {
+            EventCodes theEvent = (EventCodes)photonEvent.Code;
+            object[] data = (object[])photonEvent.CustomData;
             Debug.Log("Recieved Event");
-            switch(theEvent){
+            switch (theEvent)
+            {
                 case EventCodes.NewPlayer:
                     NewPlayerReceive(data);
                     break;
@@ -52,60 +55,77 @@ public class MatchManager : MonoBehaviourPunCallbacks,IOnEventCallback
     {
         PhotonNetwork.RemoveCallbackTarget(this);
     }
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (UI_Controler.instance.leaderBroad.activeInHierarchy)
+            {
+                UI_Controler.instance.leaderBroad.SetActive(false);
+            }
+            else
+            {
+                ShowLeaderBoard();
+            }
+        }
+    }
 
-    public void NewPlayerSend(string userName){
-        object [] package=new object[4];
-        package[0]=userName;
-        package[1]=PhotonNetwork.LocalPlayer.ActorNumber;
-        package[2]=0;
-        package[3]=0;
+    public void NewPlayerSend(string userName)
+    {
+        object[] package = new object[4];
+        package[0] = userName;
+        package[1] = PhotonNetwork.LocalPlayer.ActorNumber;
+        package[2] = 0;
+        package[3] = 0;
 
 
         PhotonNetwork.RaiseEvent(
             (byte)EventCodes.NewPlayer,
             package,
-            new RaiseEventOptions{Receivers =ReceiverGroup.MasterClient},
-            new SendOptions{Reliability=true}
+            new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient },
+            new SendOptions { Reliability = true }
             );
     }
-    public void NewPlayerReceive(object[] dataRecieved){
-        PlayerInfo player=new PlayerInfo((string)dataRecieved[0],(int)dataRecieved[1],(int)dataRecieved[2],(int)dataRecieved[3]);
+    public void NewPlayerReceive(object[] dataRecieved)
+    {
+        PlayerInfo player = new PlayerInfo((string)dataRecieved[0], (int)dataRecieved[1], (int)dataRecieved[2], (int)dataRecieved[3]);
 
         allPlayerInfos.Add(player);
 
         ListPlayerSend();
     }
-    public void ListPlayerSend(){
-        object []package= new object [allPlayerInfos.Count];
+    public void ListPlayerSend()
+    {
+        object[] package = new object[allPlayerInfos.Count];
 
-       for (int i=0;i<allPlayerInfos.Count;i++){
+        for (int i = 0; i < allPlayerInfos.Count; i++)
+        {
+            object[] piece = new object[4];
 
-            object [] piece =new object[4];
+            piece[0] = allPlayerInfos[i].name;
+            piece[1] = allPlayerInfos[i].actor;
+            piece[2] = allPlayerInfos[i].kills;
+            piece[3] = allPlayerInfos[i].deaths;
 
-            piece[0]=allPlayerInfos[0].name;
-            piece[1]=allPlayerInfos[1].actor;
-            piece[2]=allPlayerInfos[2].kills;
-            piece[3]=allPlayerInfos[3].deaths;
-
-            package[i]=piece;
-
+            package[i] = piece;
         }
-         PhotonNetwork.RaiseEvent(
+
+        PhotonNetwork.RaiseEvent(
             (byte)EventCodes.ListPlayer,
             package,
-            new RaiseEventOptions{Receivers =ReceiverGroup.All},
-            new SendOptions{Reliability=true}
-            );
-
-       
+            new RaiseEventOptions { Receivers = ReceiverGroup.All },
+            new SendOptions { Reliability = true }
+        );
     }
-    public void ListPlayerRecieve(object[] dataRecieved){
+    public void ListPlayerRecieve(object[] dataRecieved)
+    {
         allPlayerInfos.Clear();
 
-        for(int i=0;i<dataRecieved.Length;i++){
-            object[] piece=(object [])dataRecieved[i];
-            
-            PlayerInfo player=new PlayerInfo(
+        for (int i = 0; i < dataRecieved.Length; i++)
+        {
+            object[] piece = (object[])dataRecieved[i];
+
+            PlayerInfo player = new PlayerInfo(
                 (string)piece[0],
                 (int)piece[1],
                 (int)piece[2],
@@ -113,25 +133,134 @@ public class MatchManager : MonoBehaviourPunCallbacks,IOnEventCallback
             );
             allPlayerInfos.Add(player);
 
-            if(PhotonNetwork.LocalPlayer.ActorNumber==player.actor){
-                index=i;
+            if (PhotonNetwork.LocalPlayer.ActorNumber == player.actor)
+            {
+                index = i;
             }
         }
     }
-    public void UpdateStatSend(){
+    public void UpdateStatSend(int actorSending, int statToUpdate, int amountToChange)
+    {
+        object[] package = new object[]{
+            actorSending,statToUpdate,amountToChange
+        };
 
+        PhotonNetwork.RaiseEvent(
+           (byte)EventCodes.UpdateStat,
+           package,
+           new RaiseEventOptions { Receivers = ReceiverGroup.All },
+           new SendOptions { Reliability = true }
+           );
     }
-    public void UpdateStatReceive(object[] dataRecieved){
-        
+    public void UpdateStatReceive(object[] dataRecieved)
+    {
+        int actor = (int)dataRecieved[0];
+        int statType = (int)dataRecieved[1];
+        int amount = (int)dataRecieved[2];
+
+        for (int i = 0; i < allPlayerInfos.Count; i++)
+        {
+            if (allPlayerInfos[i].actor == actor)
+            {
+                switch (statType)
+                {
+                    case 0: //kills
+                        allPlayerInfos[i].kills += amount;
+                        Debug.Log("Player" + allPlayerInfos[i].name + ": kills" + allPlayerInfos[i].kills);
+                        break;
+                    case 1: //death
+                        allPlayerInfos[i].deaths += amount;
+                        Debug.Log("Player" + allPlayerInfos[i].name + ": kills" + allPlayerInfos[i].deaths);
+                        break;
+                }
+                if (i == index)
+                {
+                    UpdateStatDisplay();
+                }
+
+                if (UI_Controler.instance.leaderBroad.activeInHierarchy)
+                {
+                    ShowLeaderBoard();
+                }
+                break;
+            }
+        }
     }
 
     void Start()
     {
-        if(!PhotonNetwork.IsConnected){
+        if (!PhotonNetwork.IsConnected)
+        {
             SceneManager.LoadScene(0);
-        }else{
+        }
+        else
+        {
             NewPlayerSend(PhotonNetwork.NickName);
         }
+    }
+
+    public void UpdateStatDisplay()
+    {
+        if (allPlayerInfos.Count > index)
+        {
+            UI_Controler.instance.GetKillText().text = "Kills :" + allPlayerInfos[index].kills;
+            UI_Controler.instance.GetDeathLabel().text = "Deaths :" + allPlayerInfos[index].deaths;
+        }
+        else
+        {
+            UI_Controler.instance.GetKillText().text = "Kills : 0";
+            UI_Controler.instance.GetDeathLabel().text = "Deaths : 0";
+        }
+
+    }
+
+    void ShowLeaderBoard()
+    {
+        UI_Controler.instance.leaderBroad.SetActive(true);
+
+        foreach (LeaderBroadPlayer lp in lBoardPlayer)
+        {
+            Destroy(lp.gameObject);
+        }
+        lBoardPlayer.Clear();
+
+        UI_Controler.instance.leaderbroadPlayer.gameObject.SetActive(false);
+        List<PlayerInfo> sorted = SortPlayer(allPlayerInfos);
+        foreach (PlayerInfo player in   sorted)
+        {
+            LeaderBroadPlayer newPlayerDisplay = Instantiate(UI_Controler.instance.leaderbroadPlayer, UI_Controler.instance.leaderbroadPlayer.transform.parent);
+
+            newPlayerDisplay.SetDetails(player.name, player.kills, player.deaths);
+
+            newPlayerDisplay.gameObject.SetActive(true);
+
+            lBoardPlayer.Add(newPlayerDisplay);
+        }
+    }
+
+    private List<PlayerInfo> SortPlayer(List<PlayerInfo> players)
+    {
+        List<PlayerInfo> sortedPlayerList = new List<PlayerInfo>();
+
+        while (sortedPlayerList.Count < players.Count)
+        {
+            int highestKill = -1;
+            PlayerInfo selectedPlayer = players[0];
+            foreach (PlayerInfo player in players)
+            {
+                if (!sortedPlayerList.Contains(player)){ 
+                    if (player.kills > highestKill)
+                    {
+                        selectedPlayer = player;
+                        highestKill = player.kills;
+                    }
+                }
+                
+            }
+
+            sortedPlayerList.Add(selectedPlayer);
+        }
+        return sortedPlayerList;
     }
 }
 

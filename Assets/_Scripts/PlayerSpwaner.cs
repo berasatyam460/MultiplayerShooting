@@ -40,6 +40,7 @@ public class PlayerSpwaner : MonoBehaviour
         if(player!=null){
             StartCoroutine(DieCo(damager));
         }
+        MatchManager.instance.UpdateStatSend(PhotonNetwork.LocalPlayer.ActorNumber,1,1);
    }
 
    IEnumerator DieCo(string damager){

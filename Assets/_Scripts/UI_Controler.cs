@@ -7,10 +7,18 @@ using UnityEngine.UI;
 public class UI_Controler : MonoBehaviour
 {
     public static UI_Controler instance;
-    [Header("Components")]
+    [Header("Elements")]
     [SerializeField]GameObject deathScreen;
      [SerializeField]TMP_Text deathText;
      [SerializeField]Slider healthSlider;
+    [SerializeField]TMP_Text killText;
+    [SerializeField]TMP_Text deathLabelText;
+
+    [Header("Leaderboard")]
+    public GameObject leaderBroad;
+    public LeaderBroadPlayer leaderbroadPlayer;
+
+
     void Awake()
     {
         instance=this;
@@ -26,5 +34,13 @@ public class UI_Controler : MonoBehaviour
     public void setMaxValue(int maxHealth){
         healthSlider.maxValue=maxHealth;
     }
+
+    public TMP_Text GetKillText(){
+        return killText;
+    }
+    public TMP_Text GetDeathLabel(){
+        return deathLabelText;
+    }
+
     
 }
