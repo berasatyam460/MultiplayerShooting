@@ -18,6 +18,8 @@ public class UI_Controler : MonoBehaviour
     public GameObject leaderBroad;
     public LeaderBroadPlayer leaderbroadPlayer;
 
+    [Header("EndScreen")]
+    [SerializeField] public GameObject endScreen;
 
     void Awake()
     {

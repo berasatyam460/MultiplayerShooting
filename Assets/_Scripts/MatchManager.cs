@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
 using System.Collections.Generic;
+using System.Collections;
 
 public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 {
@@ -20,6 +21,18 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
         ListPlayer,
         UpdateStat
     }
+
+
+    public enum GameState
+    {
+        Waiting,
+        Playing,
+        Ending
+    }
+    private int killsToWin = 3;
+    [SerializeField] public Transform mapCamPoint;
+    public GameState gameState = GameState.Waiting;
+    public float waitAfterEnding = 5f;
 
     [SerializeField] List<PlayerInfo> allPlayerInfos = new List<PlayerInfo>();
     private int index;
@@ -57,7 +70,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     }
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Tab))
+        if (Input.GetKeyDown(KeyCode.Tab) && gameState != GameState.Ending)
         {
             if (UI_Controler.instance.leaderBroad.activeInHierarchy)
             {
@@ -96,8 +109,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     }
     public void ListPlayerSend()
     {
-        object[] package = new object[allPlayerInfos.Count];
-
+        object[] package = new object[allPlayerInfos.Count + 1];
+        package[0] = gameState;
         for (int i = 0; i < allPlayerInfos.Count; i++)
         {
             object[] piece = new object[4];
@@ -107,7 +120,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
             piece[2] = allPlayerInfos[i].kills;
             piece[3] = allPlayerInfos[i].deaths;
 
-            package[i] = piece;
+            package[i + 1] = piece;
         }
 
         PhotonNetwork.RaiseEvent(
@@ -120,8 +133,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     public void ListPlayerRecieve(object[] dataRecieved)
     {
         allPlayerInfos.Clear();
-
-        for (int i = 0; i < dataRecieved.Length; i++)
+        gameState = (GameState)dataRecieved[0];
+        for (int i = 1; i < dataRecieved.Length; i++)
         {
             object[] piece = (object[])dataRecieved[i];
 
@@ -135,9 +148,11 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
             if (PhotonNetwork.LocalPlayer.ActorNumber == player.actor)
             {
-                index = i;
+                index = i - 1;
             }
         }
+
+        StateCheck();
     }
     public void UpdateStatSend(int actorSending, int statToUpdate, int amountToChange)
     {
@@ -185,6 +200,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
                 break;
             }
         }
+
+        ScoreCheck();
     }
 
     void Start()
@@ -196,6 +213,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
         else
         {
             NewPlayerSend(PhotonNetwork.NickName);
+            gameState = GameState.Playing;
         }
     }
 
@@ -226,7 +244,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         UI_Controler.instance.leaderbroadPlayer.gameObject.SetActive(false);
         List<PlayerInfo> sorted = SortPlayer(allPlayerInfos);
-        foreach (PlayerInfo player in   sorted)
+        foreach (PlayerInfo player in sorted)
         {
             LeaderBroadPlayer newPlayerDisplay = Instantiate(UI_Controler.instance.leaderbroadPlayer, UI_Controler.instance.leaderbroadPlayer.transform.parent);
 
@@ -248,30 +266,103 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
             PlayerInfo selectedPlayer = players[0];
             foreach (PlayerInfo player in players)
             {
-                if (!sortedPlayerList.Contains(player)){ 
+                if (!sortedPlayerList.Contains(player))
+                {
                     if (player.kills > highestKill)
                     {
                         selectedPlayer = player;
                         highestKill = player.kills;
                     }
                 }
-                
+
             }
 
             sortedPlayerList.Add(selectedPlayer);
         }
         return sortedPlayerList;
     }
+
+
+    public override void OnLeftRoom()
+    {
+        base.OnLeftRoom();
+
+        SceneManager.LoadScene(0);
+    }
+
+    void ScoreCheck()
+    {
+        bool winnerFound = false;
+        foreach (PlayerInfo player in allPlayerInfos)
+        {
+            if (player.kills >= killsToWin && killsToWin > 0)
+            {
+                winnerFound = true;
+                break;
+            }
+        }
+
+        if (winnerFound)
+        {
+            if (PhotonNetwork.IsMasterClient && gameState != GameState.Ending)
+            {
+                gameState = GameState.Ending;
+
+                ListPlayerSend();
+            }
+        }
+
+    }
+
+    void StateCheck()
+    {
+        if (gameState == GameState.Ending)
+        {
+            EndGame();
+        }
+    }
+    void EndGame()
+    {
+        gameState = GameState.Ending;
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            PhotonNetwork.DestroyAll();
+
+        }
+        UI_Controler.instance.endScreen.SetActive(true);
+        ShowLeaderBoard();
+
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        StartCoroutine(WaitForEnd());
+
+    }
+
+    IEnumerator WaitForEnd()
+    {
+        yield return new WaitForSeconds(waitAfterEnding);
+
+        PhotonNetwork.AutomaticallySyncScene = false;
+
+        PhotonNetwork.LeaveRoom();
+    }
 }
 
 [System.Serializable]
-public class PlayerInfo{
+public class PlayerInfo
+{
     public string name;
-    public int actor,kills,deaths;
-    public PlayerInfo(string _name,int _actor,int _kills,int _deaths){
-        name=_name;
-        actor=_actor;
-        kills=_kills;
-        deaths=_deaths;
+    public int actor, kills, deaths;
+    public PlayerInfo(string _name, int _actor, int _kills, int _deaths)
+    {
+        name = _name;
+        actor = _actor;
+        kills = _kills;
+        deaths = _deaths;
     }
+    
+
 }
