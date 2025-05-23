@@ -43,12 +43,19 @@ public class PlayerSpwaner : MonoBehaviour
         MatchManager.instance.UpdateStatSend(PhotonNetwork.LocalPlayer.ActorNumber,1,1);
    }
 
-   IEnumerator DieCo(string damager){
-        PhotonNetwork.Instantiate(deathFx.name,player.transform.position,Quaternion.identity);
+    IEnumerator DieCo(string damager)
+    {
+        PhotonNetwork.Instantiate(deathFx.name, player.transform.position, Quaternion.identity);
         PhotonNetwork.Destroy(player);
-        UI_Controler.instance.ShowDeathScreen(damager,true);
+        player = null;
+        UI_Controler.instance.ShowDeathScreen(damager, true);
         yield return new WaitForSeconds(respwanTime);
-        UI_Controler.instance.ShowDeathScreen(damager,false);
-        SpwanPlayer();
+        UI_Controler.instance.ShowDeathScreen(damager, false);
+
+        if (MatchManager.instance.gameState == MatchManager.GameState.Playing && player==null)
+            SpwanPlayer();
+
+
+
    }
 }

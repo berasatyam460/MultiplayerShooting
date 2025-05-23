@@ -19,7 +19,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     {
         NewPlayer,
         ListPlayer,
-        UpdateStat
+        UpdateStat,
+        NextMatch
     }
 
 
@@ -37,6 +38,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     [SerializeField] List<PlayerInfo> allPlayerInfos = new List<PlayerInfo>();
     private int index;
     [SerializeField] EventCodes theEvent;
+
+    public bool perpetual; 
 
     private List<LeaderBroadPlayer> lBoardPlayer = new List<LeaderBroadPlayer>();
     public void OnEvent(EventData photonEvent)
@@ -57,6 +60,9 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
                 case EventCodes.UpdateStat:
                     UpdateStatReceive(data);
                     break;
+                case EventCodes.NextMatch:
+                    NextMatchReceive();
+                    break;    
             }
         }
     }
@@ -337,6 +343,9 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
+        Camera.main.transform.position = mapCamPoint.position;
+        Camera.main.transform.rotation = mapCamPoint.rotation;
+
         StartCoroutine(WaitForEnd());
 
     }
@@ -345,10 +354,66 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     {
         yield return new WaitForSeconds(waitAfterEnding);
 
-        PhotonNetwork.AutomaticallySyncScene = false;
+        if (!perpetual)
+        {
+            PhotonNetwork.AutomaticallySyncScene = false;
 
-        PhotonNetwork.LeaveRoom();
+            PhotonNetwork.LeaveRoom();
+        }
+        else
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+
+                if (Launcher.instance.changeMapinMultipleRounds)
+                    NextMatchSend();
+                else
+                {
+                    int newlvl = Random.Range(0, Launcher.instance.allMaps.Length);
+
+                    if (Launcher.instance.allMaps[newlvl] == SceneManager.GetActiveScene().name)
+                    {
+                        NextMatchSend();
+
+                    }
+                    else
+                    {
+                        PhotonNetwork.LoadLevel(Launcher.instance.allMaps[newlvl]);
+                    }
+                }
+            }
+        }
+        
     }
+
+    public void NextMatchSend()
+    {
+        PhotonNetwork.RaiseEvent(
+           (byte)EventCodes.NextMatch,
+           null,
+           new RaiseEventOptions { Receivers = ReceiverGroup.All },
+           new SendOptions { Reliability = true }
+           );
+    }
+    public void NextMatchReceive()
+    {
+        gameState = GameState.Playing;
+        UI_Controler.instance.endScreen.SetActive(false);
+        UI_Controler.instance.leaderBroad.SetActive(false);
+
+
+        foreach (var player in allPlayerInfos)
+        {
+            player.kills = 0;
+            player.deaths = 0;
+
+        }
+
+        UpdateStatDisplay();
+
+        PlayerSpwaner.instance.SpwanPlayer();
+    }
+
 }
 
 [System.Serializable]

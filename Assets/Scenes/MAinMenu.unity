@@ -4130,7 +4130,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7590832489767194451, guid: 067f611ab0f154841b6a30714baad4c1, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7590832489767194451, guid: 067f611ab0f154841b6a30714baad4c1, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -5151,8 +5151,11 @@ MonoBehaviour:
   roomBtnContainer: {fileID: 519587321}
   nickNameInput: {fileID: 1372480866}
   nickNamePanel: {fileID: 1228312199}
-  hasSetTheNickName: 0
   startBtn: {fileID: 1757010581}
+  allMaps:
+  - Map
+  - map2
+  changeMapinMultipleRounds: 1
 --- !u!4 &1912943880
 Transform:
   m_ObjectHideFlags: 0
